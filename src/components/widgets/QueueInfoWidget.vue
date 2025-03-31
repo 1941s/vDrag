@@ -2,9 +2,8 @@
   <widget-wrapper
     ref="wrapper"
     :item="item"
+    :active.sync="isActive"
     @update:dragInfo="updateDragInfo"
-    @activated="isActive = true"
-    @deactivated="isActive = false"
   >
     <div class="queue-widget">
       <div class="queue-list">
@@ -201,8 +200,25 @@ export default {
       return {};
     }
   },
+  watch: {
+    // 监听active prop的变化
+    active: {
+      immediate: true,
+      handler(newVal) {
+        this.isActive = newVal;
+      }
+    }
+  },
   created() {
     // 只有在初始化组件需要时才应用默认设置，现在由拖拽位置决定
+  },
+  mounted() {
+    // 当组件是通过拖放新建的，需要自动激活
+    if (this.item && this.item.isNew) {
+      this.$nextTick(() => {
+        this.$emit('update:active', true);
+      });
+    }
   },
   methods: {
     // 更新组件位置信息

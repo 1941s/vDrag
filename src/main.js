@@ -139,59 +139,8 @@ Object.keys(directives).forEach(key => {
 Vue.config.productionTip = false
 Vue.use(ElementUI)
 
-// 全局样式
-const globalStyle = document.createElement('style');
-globalStyle.type = 'text/css';
-globalStyle.innerHTML = `
-  .el-select-dropdown, .el-dropdown-menu, .el-color-dropdown {
-    z-index: 99999 !important; 
-  }
-  
-  .el-select-dropdown .el-scrollbar, 
-  .el-select-dropdown .el-select-dropdown__list, 
-  .el-select-dropdown .el-select-dropdown__item {
-    pointer-events: auto !important;
-  }
-  
-  .el-color-dropdown .el-color-dropdown__main-wrapper, 
-  .el-color-dropdown .el-color-dropdown__value, 
-  .el-color-dropdown__btn {
-    pointer-events: auto !important;
-  }
-  
-  /* 全局增强滑块控件 */
-  .el-slider, 
-  .el-slider * {
-    pointer-events: auto !important;
-  }
-  
-  .el-slider__runway, 
-  .el-slider__bar, 
-  .el-slider__button,
-  .el-slider__button-wrapper {
-    pointer-events: auto !important;
-    z-index: 999 !important;
-  }
-  
-  .el-slider {
-    z-index: 999 !important;
-  }
-  
-  /* 输入数字控件样式 */
-  .el-input-number {
-    width: 100%;
-    z-index: 999 !important;
-  }
-  
-  .el-input-number input,
-  .el-input-number .el-input__inner,
-  .el-input-number .el-input-number__decrease,
-  .el-input-number .el-input-number__increase {
-    pointer-events: auto !important;
-    z-index: 999 !important;
-  }
-`;
-document.head.appendChild(globalStyle);
+// 导入全局样式
+import './assets/styles/global.css';
 
 // 挂载Vue实例
 new Vue({

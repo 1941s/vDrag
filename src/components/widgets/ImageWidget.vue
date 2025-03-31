@@ -2,9 +2,8 @@
   <widget-wrapper
     ref="wrapper"
     :item="item"
+    :active.sync="isActive"
     @update:dragInfo="updateDragInfo"
-    @activated="isActive = true"
-    @deactivated="isActive = false"
   >
     <div class="image-widget">
       <img 
@@ -56,11 +55,15 @@ export default {
     previewMode: {
       type: Boolean,
       default: false
+    },
+    active: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
     return {
-      isActive: false,
+      isActive: this.active,
       imgSrcInput: this.item && this.item.state ? this.item.state.imgSrc || '' : ''
     };
   },
@@ -75,6 +78,13 @@ export default {
     }
   },
   watch: {
+    // 监听active prop变化
+    active: {
+      immediate: true,
+      handler(newVal) {
+        this.isActive = newVal;
+      }
+    },
     imgSrc: {
       handler(newVal) {
         this.imgSrcInput = newVal;
@@ -84,6 +94,14 @@ export default {
   },
   created() {
     // 只有在初始化组件需要时才应用默认设置，现在由拖拽位置决定
+  },
+  mounted() {
+    // 当组件是通过拖放新建的，需要自动激活
+    if (this.item && this.item.isNew) {
+      this.$nextTick(() => {
+        this.$emit('update:active', true);
+      });
+    }
   },
   methods: {
     // 更新组件位置信息

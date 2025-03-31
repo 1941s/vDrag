@@ -16,7 +16,7 @@
     :active="isActive"
     :min-width="50"
     :min-height="30"
-    :z="dragInfo.zIndex || 1"
+    :z="'auto'"
     :handles="isActive ? ['tl', 'tm', 'tr', 'mr', 'br', 'bm', 'bl', 'ml'] : []"
     @activated="onActivated"
     @deactivated="onDeactivated"
@@ -29,8 +29,12 @@
     :prevent-deactivation="true"
     @mouseenter="hovered = true"
     @mouseleave="hovered = false"
+    @click="handleClick"
+    :style="combinedStyle"
   >
-    <slot></slot>
+    <div class="widget-content" :style="{zIndex: 'inherit', position: 'relative'}">
+      <slot></slot>
+    </div>
   </vue-draggable-resizable>
 </template>
 
@@ -45,6 +49,10 @@ export default {
     active: {
       type: Boolean,
       default: false
+    },
+    zStyle: {
+      type: Object,
+      default: () => ({ zIndex: 'auto' })
     }
   },
   data() {
@@ -57,7 +65,12 @@ export default {
   },
   computed: {
     dragInfo() {
-      return this.item.dragInfo || { w: 200, h: 100, x: 0, y: 0, zIndex: 1 };
+      return this.item.dragInfo || { w: 200, h: 100, x: 0, y: 0 };
+    },
+    combinedStyle() {
+      return {
+        ...this.zStyle
+      };
     }
   },
   watch: {
@@ -70,16 +83,32 @@ export default {
         // 已处理在props中
       },
       deep: true
+    },
+    'item.zIndex'(newVal) {
+      // 监听zIndex变化，直接更新DOM
+      this.$nextTick(() => {
+        if (this.$el) {
+          this.$el.style.zIndex = newVal;
+        }
+      });
     }
+  },
+  mounted() {
+    // 确保组件挂载时正确设置zIndex
+    this.$nextTick(() => {
+      if (this.$el && this.item.zIndex) {
+        this.$el.style.zIndex = this.item.zIndex;
+      }
+    });
   },
   methods: {
     onActivated() {
-      this.isActive = true;
+      this.$emit('update:active', true);
       this.$emit('activated');
       this.updateDragAndResizeState();
     },
     onDeactivated() {
-      this.isActive = false;
+      this.$emit('update:active', false);
       this.$emit('deactivated');
       this.updateDragAndResizeState();
     },
@@ -111,6 +140,10 @@ export default {
     },
     setDraggable(val) {
       this.draggable = val;
+    },
+    handleClick(event) {
+      event.stopPropagation();
+      this.$emit('click');
     }
   }
 };
@@ -118,14 +151,13 @@ export default {
 
 <style scoped>
 .widget-wrapper {
-  position: absolute;
+  position: absolute !important;
   box-sizing: border-box;
   transition: outline 0.2s ease;
 }
 
 .widget-wrapper.active {
   outline: 2px solid #409EFF;
-  z-index: 100 !important;
 }
 
 .widget-wrapper.hover-effect {
@@ -134,10 +166,26 @@ export default {
 }
 
 /* 隐藏非激活状态下的调整大小控制点 */
-.widget-wrapper:not(.active) >>> .handle {
+.widget-wrapper:not(.active) /deep/ .handle {
   display: none !important;
   opacity: 0 !important;
   visibility: hidden !important;
   pointer-events: none !important;
+}
+
+/* 确保vue-draggable-resizable的内部样式不会覆盖我们的z-index */
+.widget-wrapper /deep/ .vdr {
+  z-index: inherit !important;
+}
+
+/* 使用更高优先级的选择器确保z-index应用 */
+div.widget-wrapper {
+  z-index: inherit !important;
+}
+
+/* 内容层应该继承z-index */
+.widget-content {
+  width: 100%;
+  height: 100%;
 }
 </style> 

@@ -219,10 +219,6 @@ export default {
 }
 </script>
 
-<style>
-/* 清除之前的全局样式 */
-</style>
-
 <style scoped>
 .text-control {
   padding: 15px;
@@ -249,11 +245,6 @@ export default {
   font-size: 14px;
 }
 
-.el-select {
-  width: 100%;
-  z-index: 9999 !important;
-}
-
 .input-container {
   display: flex;
   align-items: center;
@@ -261,18 +252,6 @@ export default {
 
 .editable-input {
   width: 100%;
-}
-
-.editable-input >>> input {
-  pointer-events: auto !important;
-}
-
-/* 确保控件可编辑 */
-.editable-dropdown,
-.editable-color-picker,
-.editable-slider,
-.editable-input {
-  pointer-events: auto !important;
 }
 
 .slider-container {
@@ -284,19 +263,5 @@ export default {
   margin-left: 8px;
   min-width: 30px;
   text-align: center;
-}
-
-/* 增强滑块控件的交互性 */
-.editable-slider {
-  flex: 1;
-  margin: 10px 0;
-}
-
-.editable-slider >>> .el-slider__runway,
-.editable-slider >>> .el-slider__bar,
-.editable-slider >>> .el-slider__button,
-.editable-slider >>> .el-slider__button-wrapper {
-  pointer-events: auto !important;
-  z-index: 999 !important;
 }
 </style> 

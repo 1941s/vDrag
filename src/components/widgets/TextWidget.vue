@@ -2,9 +2,9 @@
   <widget-wrapper
     ref="wrapper"
     :item="item"
+    :active.sync="isActive"
+    :z-style="zStyle"
     @update:dragInfo="updateDragInfo"
-    @activated="isActive = true"
-    @deactivated="isActive = false"
   >
     <div class="text-widget">
       <!-- 如果有图片背景则显示 -->
@@ -81,12 +81,20 @@ export default {
     previewMode: {
       type: Boolean,
       default: false
+    },
+    active: {
+      type: Boolean,
+      default: false
+    },
+    zStyle: {
+      type: Object,
+      default: () => ({ zIndex: 'auto' })
     }
   },
   data() {
     return {
       isEditing: false,
-      isActive: false,
+      isActive: this.active,
       controlTarget: 'control-target'
     };
   },
@@ -109,6 +117,13 @@ export default {
     }
   },
   watch: {
+    // 监听active prop变化
+    active: {
+      immediate: true,
+      handler(newVal) {
+        this.isActive = newVal;
+      }
+    },
     isEditing(val) {
       // 编辑状态下禁用拖拽
       if (this.$refs.wrapper) {
@@ -120,6 +135,14 @@ export default {
   },
   created() {
     // 只有在初始化组件需要时才应用默认设置，现在由拖拽位置决定
+  },
+  mounted() {
+    // 当组件是通过拖放新建的，需要自动激活
+    if (this.item && this.item.isNew) {
+      this.$nextTick(() => {
+        this.$emit('update:active', true);
+      });
+    }
   },
   methods: {
     // 更新组件位置信息

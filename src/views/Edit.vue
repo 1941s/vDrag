@@ -97,13 +97,17 @@
               :key="item.id"
               :is="item.type"
               :item="item"
+              :active="activeWidget && activeWidget.id === item.id"
               :ref="`widget_${item.id}`"
               @click.native.stop="selectWidget(item)"
               :class="{
                 'selected': isWidgetSelected(item)
               }"
+              :style="getWidgetStyle(item)"
+              :z-style="getWidgetZIndexStyle(item)"
               @update:dragInfo="updateWidgetDragInfo(item, $event)"
               @update:state="updateWidgetState(item, $event)"
+              @update:active="handleWidgetActiveChange(item, $event)"
               @draggableChange="handleDraggableChange"
               @contextmenu.native.prevent="showContextMenu($event, item)"
             ></component>
@@ -131,7 +135,7 @@
       <div class="sidebar-right">
         <div class="properties-panel">
           <h3 class="panel-title"><i class="el-icon-setting"></i> 属性编辑</h3>
-          <el-tabs v-model="activeTab" class="custom-tabs">
+          <el-tabs v-model="activeTab" class="custom-tabs" @tab-click="handleTabClick">
             <el-tab-pane label="画布属性" name="canvas">
               <div class="form-group">
                 <div class="form-item">
@@ -255,7 +259,20 @@ export default {
           } else if (widget.type === 'image') {
             widget.type = 'image-widget';
           }
+          
+          // 确保所有组件都有zIndex属性
+          if (!widget.zIndex) {
+            widget.zIndex = 1;
+          }
         });
+        
+        // 重新排序所有组件的zIndex，确保值是连续的
+        if (savedTemplate.widgets.length > 0) {
+          savedTemplate.widgets.sort((a, b) => a.zIndex - b.zIndex);
+          savedTemplate.widgets.forEach((widget, index) => {
+            widget.zIndex = index + 1;
+          });
+        }
       }
       
       this.widgets = savedTemplate.widgets || [];
@@ -297,7 +314,13 @@ export default {
             target.closest('.el-slider__button') ||
             // 下拉菜单元素
             target.classList.contains('el-select-dropdown__item') ||
-            target.classList.contains('el-color-dropdown__btn');
+            target.classList.contains('el-color-dropdown__btn') ||
+            // 标签页元素
+            target.closest('.el-tabs') ||
+            target.closest('.el-tabs__item') ||
+            target.closest('.el-tabs__nav-wrap') ||
+            target.closest('.el-tabs__nav-scroll') ||
+            target.closest('.el-tabs__nav');
           
           // 如果点击的是可编辑元素，允许事件正常传播
           if (isEditable) {
@@ -480,10 +503,17 @@ export default {
       const centeredX = Math.max(0, x - defaultWidth / 2);
       const centeredY = Math.max(0, y - defaultHeight / 2);
       
+      // 获取当前最大zIndex
+      let maxZIndex = 0;
+      if (this.widgets.length > 0) {
+        maxZIndex = Math.max(...this.widgets.map(w => w.zIndex || 0));
+      }
+      
       const id = ++this.widgetIdCounter;
       const newWidget = {
         id,
         type,
+        isNew: true, // 标记为新创建的组件
         isCopied: false,
         dragInfo: {
           x: centeredX,
@@ -492,7 +522,7 @@ export default {
           h: defaultHeight
         },
         state: this.getDefaultState(type),
-        zIndex: this.widgets.length + 1
+        zIndex: maxZIndex + 1 // 确保新添加的组件在最顶层
       };
       
       this.widgets.push(newWidget);
@@ -500,6 +530,14 @@ export default {
       
       // 添加历史记录
       this.addHistoryRecord();
+      
+      // 在下一次渲染后移除isNew标记，避免影响后续操作
+      this.$nextTick(() => {
+        const index = this.widgets.findIndex(w => w.id === id);
+        if (index !== -1) {
+          this.$set(this.widgets[index], 'isNew', false);
+        }
+      });
     },
     
     // 添加组件到画布（通过点击）
@@ -634,18 +672,47 @@ export default {
     
     // 选中组件
     selectWidget(widget) {
-      // 如果点击同一个组件，重置选中状态，但保持活动状态
+      // 如果点击同一个组件，不做任何操作
       if (this.activeWidget && this.activeWidget.id === widget.id) {
-        // 只保持激活状态，不重置
         return;
       }
       
-      // 清除所有组件的活动状态
-      this.clearAllActiveWidgets();
-      
-      // 设置新的激活组件
-      this.activeWidget = widget;
-      this.activeTab = 'widget';
+      // 确保所有组件都失去焦点
+      if (this.activeWidget) {
+        const previousActiveWidget = this.activeWidget;
+        // 立即设置为null，避免状态混乱
+        this.activeWidget = null;
+        
+        // 确保上一个激活的组件立即失去焦点
+        this.$nextTick(() => {
+          const previousComponent = this.$refs[`widget_${previousActiveWidget.id}`];
+          if (previousComponent && previousComponent.length > 0) {
+            previousComponent[0].$emit('update:active', false);
+          }
+          
+          // 然后激活新选中的组件，但不改变其zIndex
+          this.$nextTick(() => {
+            this.activeWidget = widget;
+            this.activeTab = 'widget';
+            
+            const component = this.$refs[`widget_${widget.id}`];
+            if (component && component.length > 0) {
+              component[0].$emit('update:active', true);
+            }
+          });
+        });
+      } else {
+        // 如果之前没有激活的组件，直接激活新选中的组件，但不改变其zIndex
+        this.activeWidget = widget;
+        this.activeTab = 'widget';
+        
+        this.$nextTick(() => {
+          const component = this.$refs[`widget_${widget.id}`];
+          if (component && component.length > 0) {
+            component[0].$emit('update:active', true);
+          }
+        });
+      }
     },
     
     // 清除所有组件的活动状态
@@ -657,23 +724,15 @@ export default {
       this.activeWidget = null;
       this.activeTab = 'canvas';
       
-      // 确保在DOM更新周期后，手动干预组件状态
-      if (previousActiveWidget) {
-        this.$nextTick(() => {
-          this.widgets.forEach(widget => {
-            const component = this.$refs[`widget_${widget.id}`];
-            if (component && component.length > 0) {
-              if (component[0].$refs && component[0].$refs.wrapper) {
-                component[0].$refs.wrapper.isActive = false;
-                if (component[0].$refs.wrapper.$refs.drag) {
-                  // 强制vue-draggable-resizable组件进入非激活状态
-                  component[0].$refs.wrapper.$refs.drag.active = false;
-                }
-              }
-            }
-          });
+      // 确保所有组件都失去焦点
+      this.$nextTick(() => {
+        this.widgets.forEach(widget => {
+          const component = this.$refs[`widget_${widget.id}`];
+          if (component && component.length > 0) {
+            component[0].$emit('update:active', false);
+          }
         });
-      }
+      });
     },
     
     // 处理画布点击
@@ -693,19 +752,6 @@ export default {
         
         // 隐藏右键菜单
         this.hideContextMenu();
-        
-        // 强制所有组件进入非激活状态
-        this.$nextTick(() => {
-          this.widgets.forEach(widget => {
-            const component = this.$refs[`widget_${widget.id}`];
-            if (component && component.length > 0) {
-              component[0].$el.classList.remove('active');
-              if (component[0].$refs.drag) {
-                component[0].$refs.drag.active = false;
-              }
-            }
-          });
-        });
       }
     },
     
@@ -717,7 +763,14 @@ export default {
         top: item.dragInfo.y + 'px',
         width: item.dragInfo.w + 'px',
         height: item.dragInfo.h + 'px',
-        zIndex: item.zIndex
+        // 不在这里设置zIndex
+      };
+    },
+    
+    // 获取组件zIndex样式
+    getWidgetZIndexStyle(item) {
+      return {
+        zIndex: item.zIndex || 1
       };
     },
     
@@ -805,6 +858,12 @@ export default {
       const originalWidget = this.contextMenuTargetWidget;
       const id = ++this.widgetIdCounter;
       
+      // 重新排序所有组件的zIndex，确保值是连续的
+      this.widgets.sort((a, b) => a.zIndex - b.zIndex);
+      this.widgets.forEach((widget, index) => {
+        widget.zIndex = index + 1;
+      });
+      
       // 深拷贝组件数据
       const newWidget = JSON.parse(JSON.stringify(originalWidget));
       newWidget.id = id;
@@ -814,11 +873,25 @@ export default {
         y: newWidget.dragInfo.y + 20
       };
       newWidget.isCopied = true;
+      
+      // 将新组件置于最顶层
       newWidget.zIndex = this.widgets.length + 1;
       
       this.widgets.push(newWidget);
       this.selectWidget(newWidget);
       this.hideContextMenu();
+      
+      // 添加视觉反馈
+      this.$nextTick(() => {
+        const component = this.$refs[`widget_${newWidget.id}`];
+        if (component && component.length > 0) {
+          const el = component[0].$el;
+          el.classList.add('copy-animation');
+          setTimeout(() => {
+            el.classList.remove('copy-animation');
+          }, 500);
+        }
+      });
       
       // 添加历史记录
       this.addHistoryRecord();
@@ -830,44 +903,128 @@ export default {
       
       const index = this.widgets.findIndex(w => w.id === this.contextMenuTargetWidget.id);
       if (index !== -1) {
-        this.widgets.splice(index, 1);
-      }
-      
-      if (this.activeWidget && this.activeWidget.id === this.contextMenuTargetWidget.id) {
-        this.activeWidget = null;
-        this.activeTab = 'canvas';
+        // 添加删除动画效果
+        this.$nextTick(() => {
+          const component = this.$refs[`widget_${this.contextMenuTargetWidget.id}`];
+          if (component && component.length > 0) {
+            const el = component[0].$el;
+            el.classList.add('delete-animation');
+            
+            // 使用动画完成后再删除元素
+            setTimeout(() => {
+              // 删除组件
+              this.widgets.splice(index, 1);
+              
+              // 重新排序剩余组件的zIndex，确保值是连续的
+              if (this.widgets.length > 0) {
+                this.widgets.sort((a, b) => a.zIndex - b.zIndex);
+                this.widgets.forEach((widget, idx) => {
+                  widget.zIndex = idx + 1;
+                });
+              }
+              
+              if (this.activeWidget && this.activeWidget.id === this.contextMenuTargetWidget.id) {
+                this.activeWidget = null;
+                this.activeTab = 'canvas';
+              }
+              
+              // 添加历史记录
+              this.addHistoryRecord();
+            }, 300);
+          } else {
+            // 如果没有找到组件元素，直接删除
+            this.widgets.splice(index, 1);
+            
+            // 重新排序剩余组件的zIndex
+            if (this.widgets.length > 0) {
+              this.widgets.sort((a, b) => a.zIndex - b.zIndex);
+              this.widgets.forEach((widget, idx) => {
+                widget.zIndex = idx + 1;
+              });
+            }
+            
+            if (this.activeWidget && this.activeWidget.id === this.contextMenuTargetWidget.id) {
+              this.activeWidget = null;
+              this.activeTab = 'canvas';
+            }
+            
+            // 添加历史记录
+            this.addHistoryRecord();
+          }
+        });
       }
       
       this.hideContextMenu();
-      
-      // 添加历史记录
-      this.addHistoryRecord();
     },
     
     // 将组件置于顶层
     bringToFront() {
       if (!this.contextMenuTargetWidget) return;
       
-      const maxZIndex = Math.max(...this.widgets.map(w => w.zIndex));
+      // 获取当前最大zIndex
+      let maxZIndex = 0;
+      this.widgets.forEach(widget => {
+        if (widget.zIndex > maxZIndex) {
+          maxZIndex = widget.zIndex;
+        }
+      });
+      
+      // 将目标组件的zIndex设置为最大值+1
       this.contextMenuTargetWidget.zIndex = maxZIndex + 1;
+      
+      // 重新排序所有组件的zIndex，确保值是连续的
+      this.widgets.sort((a, b) => a.zIndex - b.zIndex);
+      this.widgets.forEach((widget, index) => {
+        widget.zIndex = index + 1;
+      });
+      
+      // 将目标组件移到数组末尾，确保它在最顶层
+      const index = this.widgets.findIndex(w => w.id === this.contextMenuTargetWidget.id);
+      if (index !== -1) {
+        this.widgets.splice(index, 1);
+        this.widgets.push(this.contextMenuTargetWidget);
+      }
       
       this.hideContextMenu();
       
       // 添加历史记录
       this.addHistoryRecord();
+      
+      // 显示一条提示消息
+      this.$message({
+        message: '组件已置于顶层',
+        type: 'success',
+        duration: 1000
+      });
     },
     
     // 将组件置于底层
     sendToBack() {
       if (!this.contextMenuTargetWidget) return;
       
-      const minZIndex = Math.min(...this.widgets.map(w => w.zIndex));
-      this.contextMenuTargetWidget.zIndex = minZIndex - 1;
+      // 将目标组件移到数组开头，确保它在最底层
+      const index = this.widgets.findIndex(w => w.id === this.contextMenuTargetWidget.id);
+      if (index !== -1) {
+        this.widgets.splice(index, 1);
+        this.widgets.unshift(this.contextMenuTargetWidget);
+      }
+      
+      // 重新排序所有组件的zIndex，确保值是连续的
+      this.widgets.forEach((widget, idx) => {
+        widget.zIndex = idx + 1;
+      });
       
       this.hideContextMenu();
       
       // 添加历史记录
       this.addHistoryRecord();
+      
+      // 显示一条提示消息
+      this.$message({
+        message: '组件已置于底层',
+        type: 'success',
+        duration: 1000
+      });
     },
     
     // 处理键盘快捷键
@@ -1051,6 +1208,13 @@ export default {
       if (this.activeWidget) {
         this.contextMenuTargetWidget = this.activeWidget;
         this.bringToFront();
+        
+        // 显示一条提示消息
+        this.$message({
+          message: '组件已置于顶层',
+          type: 'success',
+          duration: 1000
+        });
       }
     },
     
@@ -1059,6 +1223,13 @@ export default {
       if (this.activeWidget) {
         this.contextMenuTargetWidget = this.activeWidget;
         this.sendToBack();
+        
+        // 显示一条提示消息
+        this.$message({
+          message: '组件已置于底层',
+          type: 'success',
+          duration: 1000
+        });
       }
     },
     
@@ -1104,6 +1275,36 @@ export default {
     // 判断组件是否被选中（用于多选）
     isWidgetSelected(widget) {
       return this.selectedWidgets.includes(widget);
+    },
+    
+    // 处理组件激活状态变化
+    handleWidgetActiveChange(widget, active) {
+      if (active) {
+        this.activeWidget = widget;
+        this.activeTab = 'widget';
+      } else {
+        this.activeWidget = null;
+        this.activeTab = 'canvas';
+      }
+    },
+    
+    // 处理标签页切换
+    handleTabClick(tab) {
+      if (tab.name === 'canvas') {
+        // 切换到画布属性时，清除组件选中状态
+        this.clearAllActiveWidgets();
+      } else if (tab.name === 'widget') {
+        // 切换到组件属性时，确保有选中的组件
+        if (!this.activeWidget) {
+          this.$message.warning('请先选择一个组件');
+          // 切换回画布属性
+          this.activeTab = 'canvas';
+          return;
+        }
+      }
+      
+      // 更新activeTab
+      this.activeTab = tab.name;
     }
   }
 }
@@ -1184,7 +1385,7 @@ export default {
 }
 
 .sidebar-left, .sidebar-right {
-  width: 280px;
+  width: 320px;
   background-color: #fff;
   overflow-y: auto;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
@@ -1251,6 +1452,7 @@ export default {
   flex-wrap: wrap;
   gap: 12px;
   margin-top: 16px;
+  justify-content: center;
 }
 
 .widget-item {
@@ -1266,6 +1468,7 @@ export default {
   cursor: pointer;
   transition: all 0.25s ease;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+  margin: 0 auto;
 }
 
 .widget-item:hover {
@@ -1279,11 +1482,16 @@ export default {
   font-size: 24px;
   margin-bottom: 8px;
   color: #409EFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .widget-item span {
   font-size: 13px;
   color: #606266;
+  text-align: center;
+  width: 100%;
 }
 
 /* 拖拽时的样式 */
@@ -1464,7 +1672,7 @@ export default {
 /* 响应式调整 */
 @media (max-width: 1200px) {
   .sidebar-left, .sidebar-right {
-    width: 240px;
+    width: 280px;
   }
 }
 
@@ -1512,5 +1720,44 @@ export default {
 
 .widget-item:hover::after {
   opacity: 1;
+}
+
+.bring-to-front-animation {
+  animation: bringToFrontAnim 0.5s ease;
+}
+
+.send-to-back-animation {
+  animation: sendToBackAnim 0.5s ease;
+}
+
+@keyframes bringToFrontAnim {
+  0% { transform: scale(1); box-shadow: 0 0 0 rgba(64, 158, 255, 0.3); }
+  50% { transform: scale(1.05); box-shadow: 0 0 20px rgba(64, 158, 255, 0.7); }
+  100% { transform: scale(1); box-shadow: 0 0 4px rgba(64, 158, 255, 0.3); }
+}
+
+@keyframes sendToBackAnim {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(0.95); opacity: 0.7; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.copy-animation {
+  animation: copyAnim 0.5s ease;
+}
+
+@keyframes copyAnim {
+  0% { transform: scale(0.9); opacity: 0.7; }
+  50% { transform: scale(1.05); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.delete-animation {
+  animation: deleteAnim 0.3s ease forwards;
+}
+
+@keyframes deleteAnim {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(0.8); opacity: 0; }
 }
 </style> 

@@ -1,0 +1,228 @@
+/* Element UI组件样式增强 */
+.el-select-dropdown, .el-dropdown-menu, .el-color-dropdown {
+  z-index: 99999 !important; 
+}
+
+.el-select-dropdown .el-scrollbar, 
+.el-select-dropdown .el-select-dropdown__list, 
+.el-select-dropdown .el-select-dropdown__item {
+  pointer-events: auto !important;
+}
+
+.el-color-dropdown .el-color-dropdown__main-wrapper, 
+.el-color-dropdown .el-color-dropdown__value, 
+.el-color-dropdown__btn {
+  pointer-events: auto !important;
+}
+
+/* 确保颜色面板完全可用 */
+.el-color-picker, .el-color-picker__panel, .el-color-picker__mask {
+  pointer-events: auto !important;
+  z-index: 99999 !important;
+}
+
+.el-color-picker__panel.el-popper {
+  z-index: 99999 !important;
+}
+
+.el-color-dropdown__link-btn {
+  pointer-events: auto !important;
+}
+
+.el-color-dropdown__btn {
+  z-index: 99999 !important;
+}
+
+.el-color-svpanel, 
+.el-color-hue-slider, 
+.el-color-alpha-slider,
+.el-color-svpanel__cursor,
+.el-color-svpanel__black,
+.el-color-svpanel__white,
+.el-color-hue-slider__bar,
+.el-color-hue-slider__thumb,
+.el-color-alpha-slider__bar,
+.el-color-alpha-slider__thumb {
+  pointer-events: auto !important;
+}
+
+/* 全局增强滑块控件 */
+.el-slider, 
+.el-slider * {
+  pointer-events: auto !important;
+}
+
+.el-slider__runway, 
+.el-slider__bar, 
+.el-slider__button,
+.el-slider__button-wrapper {
+  pointer-events: auto !important;
+  z-index: 999 !important;
+}
+
+.el-slider {
+  z-index: 999 !important;
+}
+
+/* 输入数字控件样式 */
+.el-input-number {
+  width: 100%;
+  z-index: 999 !important;
+}
+
+.el-input-number input,
+.el-input-number .el-input__inner,
+.el-input-number .el-input-number__decrease,
+.el-input-number .el-input-number__increase {
+  pointer-events: auto !important;
+  z-index: 999 !important;
+}
+
+/* 弹出菜单和选择器增强 */
+.el-popover, .el-popper {
+  z-index: 99999 !important;
+}
+
+/* 确保所有表单控件交互性 */
+.el-form-item, 
+.el-form-item__content, 
+.el-input, 
+.el-input__inner, 
+.el-textarea, 
+.el-textarea__inner,
+.el-radio,
+.el-radio__input,
+.el-radio__label,
+.el-radio-group,
+.el-radio-button,
+.el-radio-button__inner {
+  pointer-events: auto !important;
+}
+
+/* 确保所有Element UI组件可点击 */
+.el-tabs__item,
+.el-tab-pane,
+.el-tabs__nav,
+.el-tabs__header,
+.el-tabs__nav-wrap,
+.el-tabs__nav-scroll,
+.el-tabs__active-bar {
+  pointer-events: auto !important;
+  z-index: 1000 !important;
+}
+
+/* 确保按钮可点击 */
+.el-button,
+.el-button--primary,
+.el-button--success,
+.el-button--warning,
+.el-button--danger,
+.el-button--info,
+.el-button--text {
+  pointer-events: auto !important;
+  z-index: 1001 !important;
+}
+
+/* 确保图标按钮可点击 */
+.el-button.is-circle,
+.el-button.is-round {
+  pointer-events: auto !important;
+}
+
+/* 强化按钮点击区域 */
+.el-button-group,
+.el-button + .el-button {
+  pointer-events: auto !important;
+}
+
+/* 确保表单控件交互性 */
+.el-form-item, 
+.el-form-item__content, 
+.el-input, 
+.el-input__inner, 
+.el-textarea, 
+.el-textarea__inner,
+.el-radio,
+.el-radio__input,
+.el-radio__label,
+.el-radio-group,
+.el-radio-button,
+.el-radio-button__inner {
+  pointer-events: auto !important;
+}
+
+/* 全局确保Element UI组件可交互 */
+.el-button, 
+.el-tabs__item,
+.el-tab-pane,
+.el-radio-button,
+.el-radio-button__inner,
+.el-checkbox,
+.el-switch,
+.el-color-picker,
+.el-input,
+.el-input-number,
+.el-select,
+.el-dropdown,
+.el-form-item {
+  pointer-events: auto !important;
+  cursor: pointer;
+  position: relative;
+  z-index: 1000;
+}
+
+/* 对话框和弹出层确保更高的z-index */
+.el-dialog,
+.el-dropdown-menu,
+.el-select-dropdown,
+.el-popover,
+.el-tooltip__popper {
+  z-index: 3000 !important;
+  pointer-events: auto !important;
+}
+
+/* 确保按钮始终可点击 */
+button,
+.el-button,
+.el-button--primary,
+.el-button--text,
+.el-button--default {
+  cursor: pointer !important;
+  pointer-events: auto !important;
+}
+
+/* 按钮组和图标按钮 */
+.el-button-group > .el-button,
+.el-button--icon {
+  pointer-events: auto !important;
+  position: relative;
+  z-index: 1001;
+}
+
+/* 修复表单控件的交互问题 */
+.el-form .el-form-item__content {
+  pointer-events: auto !important;
+}
+
+/* 修复颜色选择器 */
+.el-color-picker .el-color-picker__trigger {
+  pointer-events: auto !important;
+}
+
+/* 修复选择器和下拉菜单 */
+.el-select .el-input .el-select__caret,
+.el-select-dropdown__item {
+  pointer-events: auto !important;
+}
+
+/* Portal内容的z-index确保高于其他元素 */
+.v-portal-target {
+  z-index: 2500 !important;
+}
+
+/* 控制面板确保可交互 */
+.control-target {
+  pointer-events: auto !important;
+  position: relative;
+  z-index: 2000;
+} 
