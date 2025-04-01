@@ -1,6 +1,8 @@
 # 设计工作台
 
-一个专业的可视化设计工具，用于创建、编辑和导出各类设计稿。
+一个低代码拖拽组件，用于创建、编辑和导出各类设计稿。
+
+![image-20250401134812195](README.assets/image-20250401134812195.png)
 
 ![版本](https://img.shields.io/badge/version-1.0.0-blue.svg)
 ![许可证](https://img.shields.io/badge/license-MIT-green.svg)
