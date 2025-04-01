@@ -138,6 +138,35 @@
           <el-tabs v-model="activeTab" class="custom-tabs" @tab-click="handleTabClick">
             <el-tab-pane label="画布属性" name="canvas">
               <div class="form-group">
+                <div class="preset-sizes">
+                  <h4>常用尺寸</h4>
+                  <div class="preset-buttons">
+                    <el-button 
+                      size="small" 
+                      @click="setCanvasSize('A4')"
+                      :type="isCurrentSize('A4') ? 'primary' : 'default'">
+                      A4 (210×297mm)
+                    </el-button>
+                    <el-button 
+                      size="small" 
+                      @click="setCanvasSize('A3')"
+                      :type="isCurrentSize('A3') ? 'primary' : 'default'">
+                      A3 (297×420mm)
+                    </el-button>
+                    <el-button 
+                      size="small" 
+                      @click="setCanvasSize('16:9')"
+                      :type="isCurrentSize('16:9') ? 'primary' : 'default'">
+                      16:9 (1920×1080)
+                    </el-button>
+                    <el-button 
+                      size="small" 
+                      @click="setCanvasSize('4:3')"
+                      :type="isCurrentSize('4:3') ? 'primary' : 'default'">
+                      4:3 (1024×768)
+                    </el-button>
+                  </div>
+                </div>
                 <div class="form-item">
                   <label>宽度</label>
                   <el-input-number v-model="canvasSize.width" :min="320" :max="1920" @change="updateCanvasSize" size="small" controls-position="right" class="custom-input-number"></el-input-number>
@@ -196,7 +225,7 @@ export default {
       widgetTypes: [
         { type: 'text-widget', name: '文本', icon: 'el-icon-edit-outline' },
         { type: 'image-widget', name: '图片', icon: 'el-icon-picture-outline' },
-        { type: 'tellerNo', name: '号码', icon: 'el-icon-s-order' },
+        { type: 'tellerNo', name: '提醒', icon: 'el-icon-s-order' },
         { type: 'queueInfo', name: '队列信息', icon: 'el-icon-s-data' }
       ],
       // 上下文菜单相关
@@ -428,8 +457,8 @@ export default {
     resizableOptions(item) {
       return {
         enabled: this.activeWidget && this.activeWidget.id === item.id,
-        minWidth: 50,
-        minHeight: 30,
+        minWidth: 120,  // 增加最小宽度
+        minHeight: 40,  // 增加最小高度
         onResize: (e, ui) => {
           // 更新组件大小
           item.dragInfo.w = ui.size.width;
@@ -1208,13 +1237,6 @@ export default {
       if (this.activeWidget) {
         this.contextMenuTargetWidget = this.activeWidget;
         this.bringToFront();
-        
-        // 显示一条提示消息
-        this.$message({
-          message: '组件已置于顶层',
-          type: 'success',
-          duration: 1000
-        });
       }
     },
     
@@ -1223,13 +1245,6 @@ export default {
       if (this.activeWidget) {
         this.contextMenuTargetWidget = this.activeWidget;
         this.sendToBack();
-        
-        // 显示一条提示消息
-        this.$message({
-          message: '组件已置于底层',
-          type: 'success',
-          duration: 1000
-        });
       }
     },
     
@@ -1305,12 +1320,52 @@ export default {
       
       // 更新activeTab
       this.activeTab = tab.name;
+    },
+    
+    // 设置画布尺寸
+    setCanvasSize(preset) {
+      const sizes = {
+        'A4': { width: 794, height: 1123 }, // 210mm × 297mm at 96 DPI
+        'A3': { width: 1123, height: 1587 }, // 297mm × 420mm at 96 DPI
+        '16:9': { width: 1920, height: 1080 },
+        '4:3': { width: 1024, height: 768 }
+      };
+      
+      if (sizes[preset]) {
+        this.canvasSize = { ...sizes[preset] };
+        this.updateCanvasSize();
+      }
+    },
+    
+    // 检查当前尺寸是否为预设尺寸
+    isCurrentSize(preset) {
+      const sizes = {
+        'A4': { width: 794, height: 1123 },
+        'A3': { width: 1123, height: 1587 },
+        '16:9': { width: 1920, height: 1080 },
+        '4:3': { width: 1024, height: 768 }
+      };
+      
+      if (sizes[preset]) {
+        return this.canvasSize.width === sizes[preset].width && 
+               this.canvasSize.height === sizes[preset].height;
+      }
+      return false;
     }
   }
 }
 </script>
 
 <style scoped>
+/* 覆盖 Element UI 的按钮间距 */
+:deep(.el-button + .el-button) {
+  margin-left: 0 !important;
+}
+
+:deep(.el-checkbox.is-bordered + .el-checkbox.is-bordered) {
+  margin-left: 0 !important;
+}
+
 .editor-container {
   display: flex;
   flex-direction: column;
@@ -1759,5 +1814,52 @@ export default {
 @keyframes deleteAnim {
   0% { transform: scale(1); opacity: 1; }
   100% { transform: scale(0.8); opacity: 0; }
+}
+
+.preset-sizes {
+  margin-bottom: 20px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #ebeef5;
+}
+
+.preset-sizes h4 {
+  margin: 0 0 10px 0;
+  font-size: 13px;
+  color: #606266;
+  font-weight: 500;
+}
+
+.preset-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.preset-buttons .el-button {
+  width: 100%;
+  text-align: center;
+  padding: 6px 8px;
+  font-size: 12px;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.preset-buttons .el-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.preset-buttons .el-button--primary {
+  background-color: #409EFF;
+  border-color: #409EFF;
+}
+
+.preset-buttons .el-button--primary:hover {
+  background-color: #66b1ff;
+  border-color: #66b1ff;
 }
 </style> 

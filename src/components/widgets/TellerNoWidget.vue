@@ -562,6 +562,7 @@ export default {
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  min-height: 40px;
 }
 
 .teller-content {
@@ -570,6 +571,10 @@ export default {
   flex-wrap: wrap;
   justify-content: center;
   width: 100%;
+  height: 100%;
+  overflow: hidden;
+  padding: 4px;
+  box-sizing: border-box;
 }
 
 .teller-control-wrapper {
@@ -682,8 +687,13 @@ export default {
   z-index: 203;
 }
 
-.extra-segment {
-  margin: 0 2px;
+.prefix, .number, .suffix, .extra-segment {
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 /* 确保所有按钮可点击 */
@@ -700,5 +710,34 @@ export default {
 .el-radio-group,
 .el-radio-button {
   pointer-events: auto !important;
+}
+
+.widget-content {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+  background-color: #fff;
+  border-radius: 4px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  padding: 8px;
+  box-sizing: border-box;
+  min-width: 120px;
+  min-height: 40px;
+}
+
+.text-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 </style> 

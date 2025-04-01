@@ -103,10 +103,11 @@ export default {
       this.template.widgets.forEach(widget => {
         if (widget.type === 'queueInfo') {
           const mockList = [];
-          for (let i = 0; i < widget.state.count; i++) {
+          for (let i = 0; i < (widget.state.count || 3); i++) {
             mockList.push({
-              ticketNo: 'A' + (1001 + i),
-              windowNo: (i + 1)
+              text: '请',
+              ticket: 'A' + (1001 + i),
+              window: `到${i + 1}号窗口`
             });
           }
           widget.state.list = mockList;

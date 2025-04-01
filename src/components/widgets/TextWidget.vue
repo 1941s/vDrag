@@ -215,7 +215,7 @@ export default {
 .text-container {
   width: 100%;
   height: 100%;
-  overflow: auto;
+  /* overflow: auto; */
   box-sizing: border-box;
   padding: 5px;
 }

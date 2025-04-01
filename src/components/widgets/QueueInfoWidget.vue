@@ -307,15 +307,40 @@ export default {
   box-sizing: border-box;
 }
 
+.widget-content {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  background-color: #fff;
+  border-radius: 4px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  padding: 8px;
+  box-sizing: border-box;
+  min-width: 120px;
+  min-height: 40px;
+}
+
 .queue-list {
   width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .queue-item {
   display: flex;
-  margin-bottom: 10px;
-  padding: 8px 10px;
+  align-items: center;
+  padding: 4px;
   border-radius: 4px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .queue-item.odd {
